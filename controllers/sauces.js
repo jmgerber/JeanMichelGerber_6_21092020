@@ -18,9 +18,22 @@ exports.createSauce = (req, res, next) => {
 };
 
 exports.modifySauce = (req, res, next) => {
+  if (req.file) {
+    // Supprime l'ancienne image
+    Sauce.findOne({ _id: req.params.id })
+      .then(sauce => {
+        const filename = sauce.imageUrl.split('/images/')[1];
+        fs.unlink(`images/${filename}`, (err) => {
+          if (err) throw err;
+          console.log('Ancienne image supprimée');
+        });
+      })
+      .catch(error => res.status(400).json({ error }));
+  }
+  // Met à jour l'image et les infos
   const sauceObject = req.file ?
     {
-        ...JSON.parse(req.body.sauces),
+        ...JSON.parse(req.body.sauce),
         imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
     } : { ...req.body };
   Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
