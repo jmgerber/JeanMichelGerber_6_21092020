@@ -69,21 +69,8 @@ exports.getAllSauces = (req, res, next) => {
 exports.likeSauce = (req, res, next) => {
   Sauce.findOne({ _id: req.params.id })
   .then(sauce => {
-    if (req.body.like == 1) {
-      if (sauce.usersLiked.indexOf(req.body.userId) != -1) {
-        let userIndex = sauce.usersLiked.findIndex(user => user === req.body.userId);
-        sauce.usersLiked.splice(userIndex, 1);
-        sauce.likes -= req.body.like;
-        console.log('Like et user supprimés');
-      } 
-      else if(sauce.usersDisliked.indexOf(req.body.userId) != -1) {
-        let userIndex = sauce.usersDisliked.findIndex(user => user === req.body.userId);
-        sauce.usersDisliked.splice(userIndex, 1);
-        sauce.dislikes -= req.body.like;
-        console.log('Dislike et user supprimés');
-      }
-    }
-    else if(sauce.usersDisliked.indexOf(req.body.userId) == -1 && sauce.usersLiked.indexOf(req.body.userId) == -1) {
+    if (sauce.usersDisliked.indexOf(req.body.userID) == -1 && sauce.usersLiked.indexOf(req.body.userID) == -1) {
+      // Si l'utilisateur n'est dans aucun des deux tableaux
       if (req.body.like == 1) {
         sauce.usersLiked.push(req.body.userId);
         sauce.likes += req.body.like;
@@ -95,9 +82,22 @@ exports.likeSauce = (req, res, next) => {
         console.log('Dislike et user ajouté');
       }
     }
-    res.status(201).json({ message: 'Like modifié !'})
+    if (sauce.usersLiked.indexOf(req.body.userId) != -1 && req.body.like == 0) {
+      // Si l'utilisateur est dans le tableau des "j'aime" et qu'il veut le retirer
+      const userIndex = sauce.usersLiked.findIndex(user => user == req.body.userId);
+      sauce.usersLiked.splice(userIndex, 1);
+      sauce.likes -= 1;
+      console.log('Like et user supprimés');
+    }
+    if (sauce.usersDisliked.indexOf(req.body.userId) != -1 && req.body.like == 0) {
+      // Si l'utilisateur est dans le tableau des "j'aime pas" et veut le retirer
+      const userIndex = sauce.usersDisliked.findIndex(user => user === req.body.userId);
+      sauce.usersDisliked.splice(userIndex, 1);
+      sauce.dislikes -= 1;
+      console.log('Dislike et user supprimés');
+    }
+    sauce.save();
+    res.status(201).json({ message: 'Like modifié !'});
   })
   .catch(error => res.status(500).json({ error }));
-  console.log(req.body.like);
-  console.log(req.body.userId);
 };
