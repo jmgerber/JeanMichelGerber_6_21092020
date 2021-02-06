@@ -1,20 +1,34 @@
 const Sauce = require('../models/Sauce');
 const fs = require('fs');
+const validator = require('validator');
 
 exports.createSauce = (req, res, next) => {
+  let canSave = true;
   const sauceObject = JSON.parse(req.body.sauce);
   delete sauceObject._id;
-  const sauces = new Sauce({
-    ...sauceObject,
-    likes: 0,
-    dislikes: 0,
-    usersLiked:[],
-    usersDisliked:[],
-    imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-  });
-  sauces.save()
-    .then(() => res.status(201).json({ message: 'Sauce enregistrée !'}))
-    .catch(error => res.status(400).json({ error }));
+  let entriesArray = Object.values(sauceObject);
+  for(value in entriesArray){
+    if(validator.contains(entriesArray[value].toString(),'$') || validator.contains(entriesArray[value].toString(),'=')){
+      console.log(entriesArray[value] + " : ce texte est invalide");
+      canSave = false;
+    }
+  }
+  // Si toutes les entrées sont correctes
+  if (canSave){
+    const sauces = new Sauce({
+      ...sauceObject,
+      likes: 0,
+      dislikes: 0,
+      usersLiked:[],
+      usersDisliked:[],
+      imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+    });
+    sauces.save()
+      .then(() => res.status(201).json({ message: 'Sauce enregistrée !'}))
+      .catch(error => res.status(400).json({ error }));
+  } else{
+    res.status(401).json({ error: 'Certains caractères ne sont pas autorisés' });
+  }
 };
 
 exports.modifySauce = (req, res, next) => {
@@ -25,7 +39,6 @@ exports.modifySauce = (req, res, next) => {
         const filename = sauce.imageUrl.split('/images/')[1];
         fs.unlink(`images/${filename}`, (err) => {
           if (err) throw err;
-          console.log('Ancienne image supprimée');
         });
       })
       .catch(error => res.status(400).json({ error }));
@@ -36,9 +49,21 @@ exports.modifySauce = (req, res, next) => {
         ...JSON.parse(req.body.sauce),
         imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
     } : { ...req.body };
-  Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
-    .then(() => res.status(200).json({ message: 'Sauce modifiée !'}))
-    .catch(error => res.status(400).json({ error }));
+  let entriesArray = Object.values(sauceObject);
+  for(value in entriesArray){
+    if(validator.contains(entriesArray[value].toString(),'$') || validator.contains(entriesArray[value].toString(),'=')){
+      console.log(entriesArray[value] + " : ce texte est invalide");
+      canSave = false;
+    }
+  }
+  // Si toutes les entrées sont correctes
+  if(canSave){
+    Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
+      .then(() => res.status(200).json({ message: 'Sauce modifiée !'}))
+      .catch(error => res.status(400).json({ error }));
+  } else{
+    res.status(401).json({ error: 'Certains caractères ne sont pas autorisés' });
+  }
 };
 
 exports.deleteSauce = (req, res, next) => {

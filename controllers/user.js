@@ -6,7 +6,7 @@ const validator = require('validator');
 const User = require('../models/User');
 
 exports.signup = (req, res, next) => {
-  if (validator.isEmail(req.body.email, {blacklisted_chars: '$=' })){
+  if (validator.isEmail(req.body.email, {blacklisted_chars: '$="' })){
     bcrypt.hash(req.body.password, 10)
       .then(hash => {
         const user = new User({
@@ -19,7 +19,7 @@ exports.signup = (req, res, next) => {
       })
       .catch(error => res.status(500).json({ error }));
   } else{
-    throw new Error("Le format de l'adresse email n'est pas bon");
+    res.status(400).json({ error: "Le format de l'adresse n'est pas correct" });
   }
 };
 
