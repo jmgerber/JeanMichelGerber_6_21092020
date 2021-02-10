@@ -32,6 +32,7 @@ exports.createSauce = (req, res, next) => {
 };
 
 exports.modifySauce = (req, res, next) => {
+  let canSave = true;
   if (req.file) {
     // Supprime l'ancienne image
     Sauce.findOne({ _id: req.params.id })
